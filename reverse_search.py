@@ -11,7 +11,8 @@ upload_api_url = 'https://api.imgur.com/3/upload'
 google_rev = 'https://images.google.com/searchbyimage?image_url={}'
 
 
-def crop_and_upload(img, region):
+def crop_and_upload(img, region, overlay):
+    overlay.clicking = True
     face_img_cropped = img.crop(
         (region[0], region[1], region[0] + region[2], region[1] + region[3]))
     temp_id = uuid.uuid4()
@@ -34,3 +35,5 @@ def crop_and_upload(img, region):
         webbrowser.open_new_tab(google_rev.format(link))
 
     os.remove('./temp-{}.jpg'.format(temp_id))
+    overlay.clicking = False
+

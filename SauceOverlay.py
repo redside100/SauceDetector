@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PIL import Image, ImageGrab
 import keyboard
+import time
 import reverse_search
 
 
@@ -32,14 +33,21 @@ class SauceOverlay(QMainWindow):
         self.dimensions = (0, 0, width, height)
         self.active_regions = []
         self.clicking = False
+        self.hold_time = None
+        self.holding = False
 
         thread = Thread(target=self.loop)
         thread.start()
 
     def paintEvent(self, event):
 
-        if keyboard.is_pressed('shift+f') and not self.clicking:
-            self.clicking = True
+        if keyboard.is_pressed('shift+f') and not self.holding:
+            self.holding = True
+            self.hold_time = time.time()
+        elif not keyboard.is_pressed('shift+f'):
+            self.holding = False
+
+        if self.holding and self.hold_time and time.time() - self.hold_time >= 1 and not self.clicking:
             x, y = GetCursorPos()
             for region in self.active_regions:
                 if region[0] <= x <= region[0] + region[2] and region[1] <= y <= region[1] + region[3]:
@@ -47,10 +55,7 @@ class SauceOverlay(QMainWindow):
                     face_img = ImageGrab.grab(self.dimensions)
                     self.setVisible(True)
 
-                    Thread(target=reverse_search.crop_and_upload, args=[face_img, region]).start()
-
-        else:
-            self.clicking = False
+                    Thread(target=reverse_search.crop_and_upload, args=[face_img, region, self]).start()
 
         qp = QPainter()
         qp.begin(self)
